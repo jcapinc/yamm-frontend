@@ -1,13 +1,24 @@
 import React, { Component } from 'react';
+import axios from 'axios';
+import pack from '../../package.json';
 export default class ImportTransactions extends Component{
+
 	render(){
 		return (
-			<div class="import-form">
-				<input type="file" onChange={this.uploadFile} />
+			<div className="import-form">
+				<h1>Import Transactions</h1>
+				<input type="file" name="transactions" ref={(ref) => { this.uploadInput = ref; }} />
+				<button onClick={this.uploadFile.bind(this)}>Upload</button>
 			</div>
 		);
 	}
+
 	uploadFile(inputInfo){
-		
+		const data = new FormData();
+		data.append('transactions',this.uploadInput.files[0]);
+		let url = `${pack.config.backend}/v1/Import/ImportFile?authorization=${localStorage.jwt}`;
+		axios.post(url,data).then(result => {
+			console.log(result);
+		});
 	}
 }
