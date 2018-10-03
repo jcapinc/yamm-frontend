@@ -5,13 +5,12 @@ import config from '../../package.json';
 export default class Categories extends React.Component{
 	constructor(){
 		super();
-		this.state = {categories:[]};
+		this.state = {categories:[],children:{}};
 		this.auth = `?authorization=${localStorage.jwt}`;
 		this.fetchCategories();
 		this.tableHeaderKey = 0;
 	}
 	render(){
-		console.log("render categories:",localStorage.showCategories);
 		if(localStorage.showCategories === "true") return this.renderTable();
 		return this.renderTitle();
 	}
@@ -20,7 +19,16 @@ export default class Categories extends React.Component{
 		return (
 			<div className="categories">
 				<h1>Categories</h1>
-				<button onClick={this.hide.bind(this)}>Hide</button>
+				<div>
+					<button onClick={this.hide.bind(this)}>Hide</button>
+					<button onClick={this.fetchCategories.bind(this)}>Reload</button>
+				</div>
+				<br />
+				<div>
+					<input type="text" onChange={this.setNewCategoryName.bind(this)} />
+					<button onClick={this.createCategory.bind(this)}>Create New Category</button>
+				</div>
+				<br />
 				<table border="1" width="100%">
 					<thead>{this.getTableHeader()}</thead>
 					<tbody>{this.getTableRows(this.state.categories)}</tbody>
@@ -36,7 +44,7 @@ export default class Categories extends React.Component{
 				<th>Parent</th>
 				<th>Rules</th>
 				<th>Create Child</th>
-				<th>Create Rule</th>
+				<th>Delete</th>
 			</tr>
 		);
 	}
@@ -54,10 +62,43 @@ export default class Categories extends React.Component{
 				<td>{category.name}</td>
 				<td>{parent}</td>
 				<td>{this.renderRules(category.category_rules)}</td>
-				<td></td>
-				<td></td>
+				<td style={{width:'1px',minWidth:'fit-content',whiteSpace:'nowrap'}}>
+					<input type="text" onChange={this.setChildName.bind(this,category)} />
+					<button onClick={this.createChild.bind(this,category)}>Create</button>
+				</td>
+				<td style={{width:'1px',minWidth:'fit-content',whiteSpace:'nowrap'}}>
+					<button onClick={this.deleteCategory.bind(this,category)}>Delete</button>
+				</td>
 			</tr>
 		);
+	}
+
+	deleteCategory(category){
+		let url = `${config.config.backend}/v1/Categorization/Category${this.auth}&id=${category.id}`;
+		axios.delete(url).then(this.fetchCategories.bind(this));
+	}
+
+	setChildName(category,event){
+		this.setState({children:{...this.state.children,[category.id]: event.target.value}});
+	}
+
+	createChild(category){
+		let url = `${config.config.backend}/v1/Categorization/CreateCategory${this.auth}`;
+		return axios.post(url,{
+			name: this.state.children[category.id],
+			parent: category.id
+		}).then(this.fetchCategories.bind(this));
+	}
+
+	setNewCategoryName(event){
+		this.setState({newCategoryName:event.target.value});
+	}
+
+	createCategory(){
+		let url = `${config.config.backend}/v1/Categorization/CreateCategory${this.auth}`;
+		return axios.post(url,{
+			name: this.state.newCategoryName
+		}).then(this.fetchCategories.bind(this));
 	}
 
 	renderRules(rules){

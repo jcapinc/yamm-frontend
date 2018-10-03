@@ -1,5 +1,5 @@
 import React from 'react';
-import Axios from 'axios';
+import axios from 'axios';
 import config from '../../package.json';
 
 export default class Login extends React.Component{
@@ -8,7 +8,7 @@ export default class Login extends React.Component{
 		this.state = {jwt: null};
 	}
 	render(){
-		if(this.state.jwt === null){
+		if(this.state.jwt === null){ 
 			return <LoginForm />
 		}
 		return <UserInfo />
@@ -33,7 +33,7 @@ export class LoginForm extends React.Component{
 		console.log(event);
 		let url = `${config.config.backend}/login`;
 		url = `${url}?username=${event.target[0].value}&password=${event.target[1].value}`;
-		return Axios.post(url).then( results =>{
+		return axios.post(url).then( results =>{
 			console.log("login results",results); 
 			window.localStorage.setItem('jwt',results.data.token);
 			this.forceUpdate();
@@ -47,5 +47,16 @@ export class LoginForm extends React.Component{
 export class UserInfo extends React.Component{
 	render(){
 		return (<p>Current Logged In</p>)
+	}
+}
+
+export function checkLogin(){
+	if(localStorage.jwt){
+		axios.get(`${config.config.backend}/v1/?authorization=${localStorage.jwt}`).then(result => {
+			console.info('JWT test past');
+		}).catch(error => {
+			console.warn("JWT Failed, logging out");
+			localStorage.removeItem('jwt');
+		});
 	}
 }
