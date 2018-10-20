@@ -22,6 +22,7 @@ export default class Categories extends React.Component{
 				<div>
 					<button onClick={this.hide.bind(this)}>Hide</button>
 					<button onClick={this.fetchCategories.bind(this)}>Reload</button>
+					<button onClick={this.autoCategorize.bind(this)}>Auto-Categorize</button>
 				</div>
 				<br />
 				<div>
@@ -130,5 +131,10 @@ export default class Categories extends React.Component{
 	fetchCategories(){
 		let url = `${config.config.backend}/v1/Categorization/Categories${this.auth}`;
 		return axios.get(url).then(result => this.setState({categories:result.data}));
+	}
+
+	autoCategorize(){
+		let url = `${config.config.backend}/v1/Categorization/Categorize${this.auth}`;
+		return axios.put(url);
 	}
 }

@@ -24,6 +24,7 @@ export default class Uncategorized extends React.Component{
 				<h1>Uncategorized Transactions</h1>
 				<span>{this.state.data.length} Uncategorized Transactions <br /></span>
 				<button onClick={this.show.bind(this)}>Show</button>
+				<button onClick={this.getData.bind(this)}>Reload</button>
 			</div>
 		);
 	}
@@ -55,6 +56,7 @@ export default class Uncategorized extends React.Component{
 				<th>Description</th>
 				<th>Debit</th>
 				<th>Credit</th>
+				<th>Date</th>
 				<th>Categorize</th>
 				<th>Rule</th>
 			</tr>
@@ -62,12 +64,14 @@ export default class Uncategorized extends React.Component{
 	}
 
 	getTableRow(record){
+		let date = new Date(record.date);
 		return (
 			<tr key={record.id}>
 				<td>{record.date}</td>
 				<td>{record.description}</td>
 				<td>{record.debit}</td>
 				<td>{record.credit}</td>
+				<td>{date.getMonth()+1}/{date.getDate()}/{date.getFullYear()}</td>
 				<td>{this.getCategorySelect(record)}</td>
 				<td></td>
 			</tr>
@@ -84,7 +88,7 @@ export default class Uncategorized extends React.Component{
 
 	categorize(record,event){
 		event.target.disable();
-		let url = `${config.config.backend}/v1/`
+		// let url = `${config.config.backend}/v1/`
 	}
 
 	getData(){
