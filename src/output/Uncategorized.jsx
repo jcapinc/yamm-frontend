@@ -87,8 +87,6 @@ export default class Uncategorized extends React.Component{
 	}
 
 	categorize(record,event){
-		event.target.disable();
-		// let url = `${config.config.backend}/v1/`
 	}
 
 	getData(){

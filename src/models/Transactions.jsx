@@ -11,13 +11,22 @@ Transactions.fetchTransactions = function(){
 	let url = `${config.config.backend}/v1/Transaction/Transactions${auth}`;
 	return axios.get(url).then(response => {
 		TransactionData = response.data;
-		console.log(Transactions.emit('updated',TransactionData));
+		Transactions.emit('updated',TransactionData);
 	}).then(this.getTransactions);
 };
 
 Transactions.getTransactions = function(){
 	return TransactionData;
 };
+
+Transactions.deleteTransaction = function(id){
+	let url = `${config.config.backend}/v1/Transaction/Transaction${auth}&transaction=${id}`;
+	return axios.delete(url).then(response => {
+		console.log(response);
+		Transactions.emit('deleted',id);
+		return Transactions.fetchTransactions();
+	})
+}
 
 export default Transactions;
 Transactions.fetchTransactions();

@@ -10,22 +10,6 @@ const getWeekNumber = function(){
   return Math.ceil((((d - yearStart) / 86400000) + 1)/7)
 };
 
-const DayHeader = [...Array(7).keys()].reverse().map(ct => {
-	const day = new Date();
-	day.setDate(day.getDate() - ct);
-	return (<th key={ct}>{day.toLocaleString('en',{weekday: 'long'})}</th>);
-});
-
-const WeekHeader = [...Array(7).keys()].reverse().map(ct => {
-	return (<th key={ct}>{getWeekNumber.call(new Date()) - ct}</th>);
-});
-
-const MonthHeader = [...Array(7).keys()].reverse().map(ct => {
-	const day = new Date();
-	day.setMonth(day.getMonth() - ct);
-	return (<th key={ct}>{day.toLocaleString('en',{month: 'long'})}</th>);
-});
-
 export default class Dashboard extends React.Component{
 	constructor(props){
 		super(props);
@@ -82,11 +66,15 @@ export default class Dashboard extends React.Component{
 	}
 }
 
-class SpendingPerDay extends React.Component{
+class SpendingPerPeriod extends React.Component{
 	constructor(props){
 		super(props);
-		this.state = {transactions: null};
-		this.transactionRef = React.createRef();
+		this.state = {
+			transactions: null,
+			periodOffset: 0
+		};
+		this.columnCount = 7;
+		this.financialStyle = {textAlign:'right',fontFamily:'Ubuntu Mono,monospace,mono'};
 	}
 
 	render(){
@@ -96,57 +84,87 @@ class SpendingPerDay extends React.Component{
 		else transactions = (
 			<span>
 				<button onClick={this.setTransactions.bind(this,null)}>Clear</button>
-				<TransactionList ref={this.transactionRef} transactions={this.state.transactions} />
+				<TransactionList transactions={this.state.transactions} />
 			</span>
 		);
 		return (
 			<center>
-				<h3>Spending Per Day</h3>
+				<h3>
+					<button onClick={this.incrementPeriodOffset(1)}>&lt;</button>&nbsp;
+					Spending Per {this.periodName}&nbsp;
+					<button onClick={this.incrementPeriodOffset(-1)}>&gt;</button>
+				</h3>
 				<table border="1" style={{fontFamily:'Ubuntu Mono,monospace,mono'}}>
-					<thead><tr><th></th>{DayHeader}</tr></thead>
+					<thead><tr><th></th>{this.getHeader()}</tr></thead>
 					<tbody>
 						<tr>
 							<td>Spending</td>
-							{this.getSpendingByDay((carry,record) =>  carry + record.debit)}
+							{this.getSpendingByPeriod((carry,record) =>  carry + record.debit)}
 						</tr>
+						{this.getCategoryRows()}
+						{this.getUncategorizedRows()}
 						<tr>
 							<td>Income</td>
-							{this.getSpendingByDay((carry,record) =>  carry + record.credit)}
+							{this.getSpendingByPeriod((carry,record) =>  carry + record.credit)}
 						</tr>
 					</tbody>
 				</table>
-				
 				{transactions}
 			</center>
 		);
 	}
 
-	getChartData(){
-		return [...Array(7).keys()].reverse().map(ct => {
-			const start = new Date();
-			start.setDate(start.getDate() - ct - 1);
-			const end = new Date();
-			end.setDate(end.getDate() - ct);
-			return transactions.getTransactions().filter(record => {
-				const transactionDate = new Date(record.date);
-				return transactionDate > start && transactionDate < end;
-			}).reduce((carry,record) => {
-				carry[0] += record.debits;
-				carry[1] += record.credits;
-				return carry;
-			},[0,0]);
-		});
+	incrementPeriodOffset(offset){
+		return () => {
+			let periodOffset = this.state.periodOffset;
+			periodOffset += offset;
+			this.setState({periodOffset});
+		};
 	}
 
-	getSpendingByDay(cb){
+	getCategoryRows(){
+		return Object.values(transactions.getTransactions().reduce((carry, record) => {
+			record.categories.map(record => carry[record.name] = record);
+			return carry;
+		},{})).map(this.getCategoryRow.bind(this));
+	}
+
+	getCategoryRow(category){
+		const txs = transactions.getTransactions().filter(record => {
+			return record.categories.map(rec => rec.id).indexOf(category.id) !== -1;
+		});
+		const cells = this.columnLoop(ct => this.getSpendingByPeriodForTransactions(ct,txs,(carry,record) => {
+			return carry - record.debit + record.credit
+		}));
+		return (
+			<tr>
+				<td>{category.name}</td>
+				{cells}
+			</tr>
+		);
+	}
+
+	getUncategorizedRows(){
+		return (
+			<tr>
+				<td>Uncategorized</td>
+				{this.getUncategorizedRow((total,record) => total + record.debit)}
+			</tr>
+		)
+	}
+
+	getUncategorizedRow(reductionCb){
+		const txs = transactions.getTransactions() ? 
+			transactions.getTransactions().filter(record => record.categories.length === 0) : [];
+		return this.columnLoop(ct => this.getSpendingByPeriodForTransactions(ct,txs,reductionCb));
+	}
+
+	getSpendingByPeriod(cb){
 		return [...Array(7).keys()].reverse().map(ct => {
-			const start = new Date();
-			start.setDate(start.getDate() - ct - 1);
-			const end = new Date();
-			end.setDate(end.getDate() - ct);
+			const period = this.getPeriod(ct + this.state.periodOffset);
 			const transactionList = transactions.getTransactions().filter(record => {
 				const transactionDate = new Date(record.date);
-				return transactionDate > start && transactionDate < end;
+				return transactionDate > period.start && transactionDate < period.end;
 			});
 			const total = transactionList.reduce(cb,0);
 			return (
@@ -157,134 +175,103 @@ class SpendingPerDay extends React.Component{
 		});
 	}
 
-	setTransactions(transactions){
-		this.setState({transactions: null});
-		this.forceUpdate();
-		this.setState({transactions: transactions});
-	}
-}
-
-class SpendingPerWeek extends React.Component{
-	constructor(props){
-		super(props);
-		this.state = {transactions: null};
+	columnLoop(columnCb){
+		return [...Array(this.columnCount).keys()].reverse().map(ct => columnCb(ct));
 	}
 
-	render(){
-		let transactions = null;
-		if(this.state.transactions === null) transactions = (<span></span>);
-		else if(this.state.transactions === []) transactions = (<i>No Transactions</i>);
-		else transactions = (
-			<span>
-				<button onClick={this.setTransactions.bind(this,null)}>Clear</button>
-				<TransactionList ref={this.transactionRef} transactions={this.state.transactions} />
-			</span>
-		);
-		return (<center>
-			<h3>Spending Per Week</h3>
-			<table border="1" style={{fontFamily:'Ubuntu Mono,monospace,mono'}}>
-				<thead><tr><td></td>{WeekHeader}</tr></thead>
-				<tbody>
-					<tr>
-						<td>Spending</td>
-						{this.getSpendingByWeek((total,record) => total += record.debit)}
-					</tr>
-					<tr>
-						<td>Income</td>
-						{this.getSpendingByWeek((total,record) => total += record.credit)}
-					</tr>
-				</tbody>
-			</table>
-			{transactions}
-		</center>);
-	}
-
-	getSpendingByWeek(cb){
-		return [...Array(7).keys()].reverse().map(ct => {
-			const start = new Date();
-			start.setDate(start.getDate() - start.getDay() - (ct * 7));
-			const end = new Date(start);
-			end.setDate(start.getDate() + 7);
-			const trans = transactions.getTransactions().filter(record => {
-				const transactionDate = new Date(record.date);
-				return transactionDate > start && transactionDate < end;
-			});
-			const total = trans.reduce(cb,0);
-			return (
-				<td key={ct} onClick={this.setTransactions.bind(this,trans)} style={{textAlign:'right'}}>
-					${total.toFixed(2)}
-				</td>
-			);
+	getSpendingByPeriodForTransactions(ct,transactions,reductionCb){
+		const period = this.getPeriod(ct + this.state.periodOffset);
+		const transactionList = transactions.filter(record => {
+			const transactionDate = new Date(record.date);
+			return transactionDate > period.start && transactionDate < period.end;
 		});
-	}
-
-	setTransactions(transactions){
-		this.setState({transactions:transactions});
-	}
-}
-
-class SpendingPerMonth extends React.Component{
-	constructor(props){
-		super(props);
-		this.state = {
-			transactions:null
-		};
-	}
-	render(){
-		let transactions = null;
-		console.log("spending per month render",this.state.transactions);
-		if(this.state.transactions === null) transactions = (<span></span>);
-		else if(this.state.transactions === []) transactions = (<i>No Transactions</i>);
-		else transactions = (
-			<span>
-				<button onClick={this.setTransactions.bind(this,null)}>Clear</button>
-				<TransactionList ref={this.transactionRef} transactions={this.state.transactions} />
-			</span>
-		);
+		const total = transactionList.reduce(reductionCb,0);
+		const key = ct.toString() + "_" + (new Date()).toString()
 		return (
-			<center>
-				<h3>Spending Per Month</h3>
-				<table border="1" style={{fontFamily:'Ubuntu Mono,monospace,mono'}}>
-					<thead>
-						<tr><td></td>{MonthHeader}</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td>Spending</td>
-							{this.getSpendingByMonth((total,record) => total += record.debit)}
-						</tr>
-						<tr>
-							<td>Income</td>
-							{this.getSpendingByMonth((total,record) => total += record.credit)}
-						</tr>
-					</tbody>
-				</table>
-				{transactions}
-			</center>
+			<td key={key} onClick={this.setTransactions.bind(this,transactionList)} style={this.financialStyle}>
+				${total.toFixed(2)}
+			</td>
 		);
-	}
-
-	getSpendingByMonth(cb){
-		return [...Array(7).keys()].reverse().map(ct => {
-			const start = new Date();
-			start.setDate(1);
-			start.setMonth(start.getMonth() - ct)
-			const end = new Date(start);
-			end.setMonth(start.getMonth() + 1);
-			const trans = transactions.getTransactions().filter(record => {
-				const transactionDate = new Date(record.date);
-				return transactionDate > start && transactionDate < end;
-			})
-			const total = trans.reduce(cb,0);
-			return (
-				<td key={ct} onClick={this.setTransactions.bind(this,trans)} style={{textAlign:'right'}}>
-					${total.toFixed(2)}
-				</td>
-			);
-		});
 	}
 
 	setTransactions(transactions){
 		this.setState({transactions: transactions});
 	}
+}
+
+class SpendingPerDay extends SpendingPerPeriod{
+	constructor(props){
+		super(props);
+		this.periodName = "Day";
+	}
+
+	getHeader(){
+		return [...Array(7).keys()].reverse().map(ct => {
+			const day = new Date();
+			day.setDate(day.getDate() - ct - this.state.periodOffset);
+			return (
+				<th key={ct}>
+					{day.toLocaleString('en',{weekday: 'long'})}<br />
+					<small>{day.getMonth() + 1}/{day.getDate()}</small>
+				</th>
+			);
+		});;
+	}
+
+	getPeriod(ct){
+		const period = {};
+		period.start = new Date();
+		period.start.setDate(period.start.getDate() - ct - 1);
+		period.end = new Date();
+		period.end.setDate(period.end.getDate() - ct);
+		return period;
+	}
+}
+
+class SpendingPerWeek extends SpendingPerPeriod{
+	constructor(props){
+		super(props);
+		this.periodName = "Week";
+	}
+
+	getHeader(){
+		return [...Array(7).keys()].reverse().map(ct => {
+			return (<th key={ct}>{getWeekNumber.call(new Date()) - ct - this.state.periodOffset}</th>);
+		});
+	}
+
+	getPeriod(ct){
+		const period = {};
+		period.start = new Date();
+		period.start.setDate(period.start.getDate() - period.start.getDay() - (ct * 7));
+		period.end = new Date(period.start);
+		period.end.setDate(period.start.getDate() + 7);
+		return period;
+	}
+}
+
+class SpendingPerMonth extends SpendingPerPeriod{
+	constructor(props){
+		super(props);
+		this.periodName = "Month";
+	}
+
+	getHeader(){
+		return [...Array(7).keys()].reverse().map(ct => {
+			const day = new Date();
+			day.setMonth(day.getMonth() - ct - this.state.periodOffset);
+			return (<th key={ct}>{day.toLocaleString('en',{month: 'long'})}</th>);
+		});
+	}
+
+	getPeriod(ct){
+		const period = {};
+		period.start = new Date();
+		period.start.setDate(1);
+		period.start.setMonth(period.start.getMonth() - ct)
+		period.end = new Date(period.start);
+		period.end.setMonth(period.start.getMonth() + 1);
+		return period;
+	}
+	
 }
