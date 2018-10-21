@@ -10,17 +10,17 @@ const getWeekNumber = function(){
   return Math.ceil((((d - yearStart) / 86400000) + 1)/7)
 };
 
-let DayHeader = [...Array(7).keys()].reverse().map(ct => {
+const DayHeader = [...Array(7).keys()].reverse().map(ct => {
 	const day = new Date();
 	day.setDate(day.getDate() - ct);
 	return (<th key={ct}>{day.toLocaleString('en',{weekday: 'long'})}</th>);
 });
 
-let WeekHeader = [...Array(7).keys()].reverse().map(ct => {
+const WeekHeader = [...Array(7).keys()].reverse().map(ct => {
 	return (<th key={ct}>{getWeekNumber.call(new Date()) - ct}</th>);
 });
 
-let MonthHeader = [...Array(7).keys()].reverse().map(ct => {
+const MonthHeader = [...Array(7).keys()].reverse().map(ct => {
 	const day = new Date();
 	day.setMonth(day.getMonth() - ct);
 	return (<th key={ct}>{day.toLocaleString('en',{month: 'long'})}</th>);
@@ -71,6 +71,7 @@ export default class Dashboard extends React.Component{
 		localStorage.setItem("showDashboard",0);
 		this.forceUpdate();
 	}
+
 	show(){
 		localStorage.setItem("showDashboard",1);
 		this.forceUpdate();
@@ -82,7 +83,22 @@ export default class Dashboard extends React.Component{
 }
 
 class SpendingPerDay extends React.Component{
+	constructor(props){
+		super(props);
+		this.state = {transactions: null};
+		this.transactionRef = React.createRef();
+	}
+
 	render(){
+		let transactions = null;
+		if(this.state.transactions === null) transactions = (<span></span>);
+		else if(this.state.transactions === []) transactions = (<i>No Transactions</i>);
+		else transactions = (
+			<span>
+				<button onClick={this.setTransactions.bind(this,null)}>Clear</button>
+				<TransactionList ref={this.transactionRef} transactions={this.state.transactions} />
+			</span>
+		);
 		return (
 			<center>
 				<h3>Spending Per Day</h3>
@@ -99,6 +115,8 @@ class SpendingPerDay extends React.Component{
 						</tr>
 					</tbody>
 				</table>
+				
+				{transactions}
 			</center>
 		);
 	}
@@ -131,13 +149,37 @@ class SpendingPerDay extends React.Component{
 				return transactionDate > start && transactionDate < end;
 			});
 			const total = transactionList.reduce(cb,0);
-			return (<td key={ct} style={{textAlign:'right'}}>${total.toFixed(2)}</td>);
+			return (
+				<td key={ct} onClick={this.setTransactions.bind(this,transactionList)} style={{textAlign:'right'}}>
+					${total.toFixed(2)}
+				</td>
+			);
 		});
+	}
+
+	setTransactions(transactions){
+		this.setState({transactions: null});
+		this.forceUpdate();
+		this.setState({transactions: transactions});
 	}
 }
 
 class SpendingPerWeek extends React.Component{
+	constructor(props){
+		super(props);
+		this.state = {transactions: null};
+	}
+
 	render(){
+		let transactions = null;
+		if(this.state.transactions === null) transactions = (<span></span>);
+		else if(this.state.transactions === []) transactions = (<i>No Transactions</i>);
+		else transactions = (
+			<span>
+				<button onClick={this.setTransactions.bind(this,null)}>Clear</button>
+				<TransactionList ref={this.transactionRef} transactions={this.state.transactions} />
+			</span>
+		);
 		return (<center>
 			<h3>Spending Per Week</h3>
 			<table border="1" style={{fontFamily:'Ubuntu Mono,monospace,mono'}}>
@@ -153,6 +195,7 @@ class SpendingPerWeek extends React.Component{
 					</tr>
 				</tbody>
 			</table>
+			{transactions}
 		</center>);
 	}
 
@@ -162,17 +205,42 @@ class SpendingPerWeek extends React.Component{
 			start.setDate(start.getDate() - start.getDay() - (ct * 7));
 			const end = new Date(start);
 			end.setDate(start.getDate() + 7);
-			const total = transactions.getTransactions().filter(record => {
+			const trans = transactions.getTransactions().filter(record => {
 				const transactionDate = new Date(record.date);
 				return transactionDate > start && transactionDate < end;
-			}).reduce(cb,0);
-			return (<td key={ct} style={{textAlign:'right'}}>${total.toFixed(2)}</td>);
+			});
+			const total = trans.reduce(cb,0);
+			return (
+				<td key={ct} onClick={this.setTransactions.bind(this,trans)} style={{textAlign:'right'}}>
+					${total.toFixed(2)}
+				</td>
+			);
 		});
+	}
+
+	setTransactions(transactions){
+		this.setState({transactions:transactions});
 	}
 }
 
 class SpendingPerMonth extends React.Component{
+	constructor(props){
+		super(props);
+		this.state = {
+			transactions:null
+		};
+	}
 	render(){
+		let transactions = null;
+		console.log("spending per month render",this.state.transactions);
+		if(this.state.transactions === null) transactions = (<span></span>);
+		else if(this.state.transactions === []) transactions = (<i>No Transactions</i>);
+		else transactions = (
+			<span>
+				<button onClick={this.setTransactions.bind(this,null)}>Clear</button>
+				<TransactionList ref={this.transactionRef} transactions={this.state.transactions} />
+			</span>
+		);
 		return (
 			<center>
 				<h3>Spending Per Month</h3>
@@ -191,6 +259,7 @@ class SpendingPerMonth extends React.Component{
 						</tr>
 					</tbody>
 				</table>
+				{transactions}
 			</center>
 		);
 	}
@@ -202,11 +271,20 @@ class SpendingPerMonth extends React.Component{
 			start.setMonth(start.getMonth() - ct)
 			const end = new Date(start);
 			end.setMonth(start.getMonth() + 1);
-			const total = transactions.getTransactions().filter(record => {
+			const trans = transactions.getTransactions().filter(record => {
 				const transactionDate = new Date(record.date);
 				return transactionDate > start && transactionDate < end;
-			}).reduce(cb,0);
-			return (<td key={ct} style={{textAlign:'right'}}>${total.toFixed(2)}</td>);
+			})
+			const total = trans.reduce(cb,0);
+			return (
+				<td key={ct} onClick={this.setTransactions.bind(this,trans)} style={{textAlign:'right'}}>
+					${total.toFixed(2)}
+				</td>
+			);
 		});
+	}
+
+	setTransactions(transactions){
+		this.setState({transactions: transactions});
 	}
 }

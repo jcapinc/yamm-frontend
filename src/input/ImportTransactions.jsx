@@ -1,8 +1,12 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import pack from '../../package.json';
-export default class ImportTransactions extends Component{
+import TransactionModel from "../models/Transactions.jsx";
 
+export default class ImportTransactions extends Component{
+	constructor(props){
+		super(props);
+	}
 	render(){
 		return (
 			<div className="import-form">
@@ -18,7 +22,7 @@ export default class ImportTransactions extends Component{
 		data.append('transactions',this.uploadInput.files[0]);
 		let url = `${pack.config.backend}/v1/Import/ImportFile?authorization=${localStorage.jwt}`;
 		axios.post(url,data).then(result => {
-			console.log(result);
+			TransactionModel.fetchTransactions();
 		});
 	}
 }
