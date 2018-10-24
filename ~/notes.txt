@@ -1,0 +1,5 @@
+Renamed 'dashboard' to 'cashflow' to be more accurate
+added single categorization to generic transaction view used, which is primarily used in the cashflow module
+genericized the cashflow modules to make their code more common with each other, making them more extensible
+adding transaction deletion tools
+Creating early category model

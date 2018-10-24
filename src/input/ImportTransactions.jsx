@@ -4,9 +4,6 @@ import pack from '../../package.json';
 import TransactionModel from "../models/Transactions.jsx";
 
 export default class ImportTransactions extends Component{
-	constructor(props){
-		super(props);
-	}
 	render(){
 		return (
 			<div className="import-form">

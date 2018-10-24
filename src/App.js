@@ -5,7 +5,7 @@ import Login, {checkLogin} from './input/Login.jsx';
 import Uncategorized from './output/Uncategorized.jsx';
 import Categories from './output/Categories.jsx';
 import Rules from './Rules.jsx';
-import Dashboard from'./output/Dashboard.jsx';
+import Cashflow from'./output/Cashflow.jsx';
 
 class App extends Component {
   constructor(){
@@ -15,7 +15,7 @@ class App extends Component {
   render() {
     if(window.localStorage.getItem('jwt')) return (
         <div className="App">
-          <Dashboard />
+          <Cashflow />
           <br /><hr />
           <Importer />
           <br /><hr />

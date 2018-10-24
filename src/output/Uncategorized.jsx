@@ -1,6 +1,8 @@
 import React from 'react';
 import axios from 'axios';
 import config from '../../package.json';
+import CategoryModel from '../models/Categories.jsx';
+import TransactionModel from '../models/Transactions.jsx';
 
 export default class Uncategorized extends React.Component{
 	constructor(){
@@ -87,6 +89,8 @@ export default class Uncategorized extends React.Component{
 	}
 
 	categorize(record,event){
+		return CategoryModel.categorizeTransaction(event.target.value,record.id)
+			.then(TransactionModel.fetchTransactions);
 	}
 
 	getData(){
@@ -97,12 +101,9 @@ export default class Uncategorized extends React.Component{
 	getCategories(){
 		let url = `${config.config.backend}/v1/Categorization/Categories${this.auth}`;
 		return axios.get(url).then(result => {
-			let categoryOptions = [(<option key={0} value={null}>-- Choose Category --</option>)];
-			for(let category of result.data){
-				categoryOptions.push((
-					<option key={category.id} value={category.id}>{category.name}</option>
-				));
-			}
+			const categoryOptions = result.data.sort((cat1,cat2) => ('' + cat1.name).localeCompare(cat2.name)).map(category => 
+				(<option key={category.id} value={category.id}>{category.name}</option>));
+			categoryOptions.unshift((<option key={0} value={null}>-- Choose Category --</option>));
 			this.setState({categories:result.data,categoryOptions:categoryOptions});
 		});
 	}

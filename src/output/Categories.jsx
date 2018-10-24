@@ -9,6 +9,7 @@ export default class Categories extends React.Component{
 		this.auth = `?authorization=${localStorage.jwt}`;
 		this.fetchCategories();
 		this.tableHeaderKey = 0;
+		this.flattenRulesThreshhold = 5;
 	}
 	render(){
 		if(localStorage.showCategories === "true") return this.renderTable();
@@ -104,9 +105,11 @@ export default class Categories extends React.Component{
 
 	renderRules(rules){
 		if(!rules || rules === null || rules.length === 0) return (<i>*none*</i>);
-		return rules.map(rule => {
+
+		if(rules.length < this.flattenRulesThreshhold ) return rules.map(rule => {
 			return (<div key={rule.id} style={{fontFamily:"monospace"}}>{rule.regex}</div>);
 		});
+		return (<i>{rules.length} Rules</i>);
 	}
 
 	renderTitle(){
