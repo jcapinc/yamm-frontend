@@ -10,6 +10,10 @@ const getWeekNumber = function(){
   return Math.ceil((((d - yearStart) / 86400000) + 1)/7)
 };
 
+const getTotalAndAverageHeaders = function(){
+	return [(<th>Average</th>),(<th>Total</th>)];
+}
+
 export default class Cashflow extends React.Component{
 	constructor(props){
 		super(props);
@@ -37,7 +41,7 @@ export default class Cashflow extends React.Component{
 
 	renderDashboard(){
 		return (
-			<div>
+			<div class="dashboard">
 				<h1>Dashboard</h1>
 				<center>
 					<button onClick={this.reload.bind(this)}>Reload</button>
@@ -135,16 +139,10 @@ class SpendingPerPeriod extends React.Component{
 		const cells = this.columnLoop(ct => this.getSpendingByPeriodForTransactions(ct,txs,(carry,record) => {
 			return carry - record.debit + record.credit
 		}));
-		const total = this.columnLoop(ct => {
-			return this.filterTransactionsByPeriod(this.getPeriod(ct + this.state.periodOffset),txs)
-				.reduce((carry,record) => parseFloat(carry) + parseFloat(record.credit) - parseFloat(record.debit),0);
-		}).reduce((carry, amount) => amount + carry,0).toFixed(2);
-		cells.push((<td>{(total ? total / this.columnCount : 0).toFixed(2)}</td>));
-		cells.push((<td>{total}</td>));
 		return (
 			<tr>
 				<td>{category.name}</td>
-				{cells}
+				{[...cells,...this.getTotalAndAverageCells(txs)]}
 			</tr>
 		);
 	}
@@ -161,20 +159,23 @@ class SpendingPerPeriod extends React.Component{
 	getUncategorizedRow(reductionCb){
 		const txs = transactions.getTransactions() ? 
 			transactions.getTransactions().filter(record => record.categories.length === 0) : [];
-		return this.columnLoop(ct => this.getSpendingByPeriodForTransactions(ct,txs,reductionCb));
+		return [...this.columnLoop(ct => this.getSpendingByPeriodForTransactions(ct,txs,reductionCb)),
+			this.getTotalAndAverageCells(txs)];
 	}
 
 	getSpendingByPeriod(cb){
-		return [...Array(7).keys()].reverse().map(ct => {
+		const transactionLists = [...Array(7).keys()].reverse().map(ct => {
 			const period = this.getPeriod(ct + this.state.periodOffset);
 			const transactionList = this.filterTransactionsByPeriod(period);
-			const total = transactionList.reduce(cb,0);
+			return transactionList
+		});
+		return [...transactionLists.map( (list,ct) => {
 			return (
-				<td key={ct} onClick={this.setTransactions.bind(this,transactionList)} style={{textAlign:'right'}}>
-					${total.toFixed(2)}
+				<td key={ct} onClick={this.setTransactions.bind(this,list)} style={{textAlign:'right'}}>
+					${list.reduce(cb,0).toFixed(2)}
 				</td>
 			);
-		});
+		}),...this.getTotalAndAverageCells(transactionLists.reduce((carry,list) => carry.concat(list),[]))];
 	}
 
 	filterTransactionsByPeriod(period,trxs){
@@ -200,6 +201,17 @@ class SpendingPerPeriod extends React.Component{
 		);
 	}
 
+	getTotalAndAverageCells(txs){
+		const total = this.columnLoop(ct => {
+			return this.filterTransactionsByPeriod(this.getPeriod(ct + this.state.periodOffset),txs)
+				.reduce((carry,record) => parseFloat(carry) + parseFloat(record.credit) - parseFloat(record.debit),0);
+		}).reduce((carry, amount) => amount + carry,0).toFixed(2);
+		return [
+			(<td style={this.financialStyle}>${(total ? total / this.columnCount : 0).toFixed(2)}</td>),
+			(<td style={this.financialStyle}>${total}</td>)
+		];
+	}
+
 	getTotalForAllPeriodsForTransactions(transactions,reductionCb){
 		let period = this.getWholePeriod();
 		const transactionList = transactions.filter(record => {
@@ -215,8 +227,6 @@ class SpendingPerPeriod extends React.Component{
 		return {start: startPeriod.start,end: endPeriod.end};
 	}
 
-	getAverageForAllPeriodsForTransactions
-
 	setTransactions(transactions){
 		this.setState({transactions: transactions});
 	}
@@ -229,7 +239,7 @@ class SpendingPerDay extends SpendingPerPeriod{
 	}
 
 	getHeader(){
-		return [...Array(7).keys()].reverse().map(ct => {
+		return [...[...Array(7).keys()].reverse().map(ct => {
 			const day = new Date();
 			day.setDate(day.getDate() - ct - this.state.periodOffset);
 			return (
@@ -238,7 +248,7 @@ class SpendingPerDay extends SpendingPerPeriod{
 					<small>{day.getMonth() + 1}/{day.getDate()}</small>
 				</th>
 			);
-		});
+		}),...getTotalAndAverageHeaders()];
 	}
 
 	getPeriod(ct){
@@ -258,9 +268,9 @@ class SpendingPerWeek extends SpendingPerPeriod{
 	}
 
 	getHeader(){
-		return [...Array(7).keys()].reverse().map(ct => {
+		return [...[...Array(7).keys()].reverse().map(ct => {
 			return (<th key={ct}>{getWeekNumber.call(new Date()) - ct - this.state.periodOffset}</th>);
-		});
+		}),...getTotalAndAverageHeaders()];
 	}
 
 	getPeriod(ct){
@@ -280,11 +290,11 @@ class SpendingPerMonth extends SpendingPerPeriod{
 	}
 
 	getHeader(){
-		return [...Array(7).keys()].reverse().map(ct => {
+		return [...[...Array(7).keys()].reverse().map(ct => {
 			const day = new Date();
 			day.setMonth(day.getMonth() - ct - this.state.periodOffset);
 			return (<th key={ct}>{day.toLocaleString('en',{month: 'long'})}</th>);
-		});
+		}),...getTotalAndAverageHeaders()];
 	}
 
 	getPeriod(ct){
