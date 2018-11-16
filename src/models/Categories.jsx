@@ -16,11 +16,13 @@ Categories.fetchCategories = function(){
 	let url = `${config.config.backend}/v1/Categorization/Categories${auth}`;
 	return axios.get(url).then( result => {
 		CategoryData = result.data;
+		Categories.emit('updated',CategoryData);
 		return CategoryData;
 	}).catch( error => {
 		console.error(error);
 	});
 };
+
 Categories.fetchCategories();
 
 Categories.categorizeTransaction = function(categoryId,transactionId){

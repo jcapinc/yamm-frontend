@@ -14,12 +14,11 @@ export default class Cashflow extends React.Component{
 	constructor(props){
 		super(props);
 		transactions.on("updated",event => {
-			console.log(event);
 			this.forceUpdate();
 		});
 	}
 	render(){
-		if(localStorage.showDashboard === 1){
+		if(parseInt(localStorage.showDashboard,10) === 1){
 			return this.renderDashboard();
 		}
 		return this.renderTeaser();
@@ -136,6 +135,12 @@ class SpendingPerPeriod extends React.Component{
 		const cells = this.columnLoop(ct => this.getSpendingByPeriodForTransactions(ct,txs,(carry,record) => {
 			return carry - record.debit + record.credit
 		}));
+		const total = this.columnLoop(ct => {
+			return this.filterTransactionsByPeriod(this.getPeriod(ct + this.state.periodOffset),txs)
+				.reduce((carry,record) => parseFloat(carry) + parseFloat(record.credit) - parseFloat(record.debit),0);
+		}).reduce((carry, amount) => amount + carry,0).toFixed(2);
+		cells.push((<td>{(total ? total / this.columnCount : 0).toFixed(2)}</td>));
+		cells.push((<td>{total}</td>));
 		return (
 			<tr>
 				<td>{category.name}</td>
@@ -162,10 +167,7 @@ class SpendingPerPeriod extends React.Component{
 	getSpendingByPeriod(cb){
 		return [...Array(7).keys()].reverse().map(ct => {
 			const period = this.getPeriod(ct + this.state.periodOffset);
-			const transactionList = transactions.getTransactions().filter(record => {
-				const transactionDate = new Date(record.date);
-				return transactionDate > period.start && transactionDate < period.end;
-			});
+			const transactionList = this.filterTransactionsByPeriod(period);
 			const total = transactionList.reduce(cb,0);
 			return (
 				<td key={ct} onClick={this.setTransactions.bind(this,transactionList)} style={{textAlign:'right'}}>
@@ -175,16 +177,20 @@ class SpendingPerPeriod extends React.Component{
 		});
 	}
 
+	filterTransactionsByPeriod(period,trxs){
+		return (trxs ? trxs : transactions.getTransactions()).filter(record => {
+			const transactionDate = new Date(record.date);
+			return transactionDate > period.start && transactionDate < period.end;
+		});
+	}
+
 	columnLoop(columnCb){
 		return [...Array(this.columnCount).keys()].reverse().map(ct => columnCb(ct));
 	}
 
 	getSpendingByPeriodForTransactions(ct,transactions,reductionCb){
 		const period = this.getPeriod(ct + this.state.periodOffset);
-		const transactionList = transactions.filter(record => {
-			const transactionDate = new Date(record.date);
-			return transactionDate > period.start && transactionDate < period.end;
-		});
+		const transactionList = this.filterTransactionsByPeriod(period,transactions);
 		const total = transactionList.reduce(reductionCb,0);
 		const key = ct.toString() + "_" + (new Date()).toString()
 		return (

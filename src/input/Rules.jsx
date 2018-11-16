@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import config from '../package.json';
+import config from '../../package.json';
 
 export default class Rules extends React.Component{
 
@@ -22,13 +22,20 @@ export default class Rules extends React.Component{
 					<select name="category" value={this.state.category} onChange={this.setCategory.bind(this)}>
 						{this.state.categoryOptions}
 					</select>
-					<input type="text" name="regex" onChange={this.setRegex.bind(this)} />
+					<input type="text" name="regex" onChange={this.setRegex.bind(this)} onKeyUp={this.inputKeyUp.bind(this)} />
 					<button onClick={this.testRegex.bind(this)}>Test</button>
 					<button onClick={this.createRule.bind(this)} disabled={!this.canCreateRule.bind(this)}>Create Rule</button>
 				</div>
 				{this.renderTransactionTable()}
+				<div style={{height:"300px"}}></div>
 			</div>
 		);
+	}
+
+	inputKeyUp(event){
+		if(event.which !== 13) return true;
+		this.setRegex.call(this,event);
+		return this.testRegex.call(this);
 	}
 	
 	createRule(){
@@ -36,7 +43,12 @@ export default class Rules extends React.Component{
 		return axios.post(url,{
 			category: this.state.category,
 			regex: this.state.regex
-		}).then(result => alert(result));
+		}).then(result => {
+			const select = document.querySelector(".rules select[name=category]");
+			select.getElementsByTagName("option")[0].selected = "selected";
+			document.querySelector(".rules input[name=regex]").value = "";
+			select.focus();
+		});
 	}
 
 	canCreateRule(){

@@ -17,9 +17,15 @@ export default class ImportTransactions extends Component{
 	uploadFile(inputInfo){
 		const data = new FormData();
 		data.append('transactions',this.uploadInput.files[0]);
-		let url = `${pack.config.backend}/v1/Import/ImportFile?authorization=${localStorage.jwt}`;
-		axios.post(url,data).then(result => {
+		let url = this.chooseEndpoint(inputInfo);
+		axios.post(url,data).then( () => {
 			TransactionModel.fetchTransactions();
 		});
+	}
+
+	chooseEndpoint(inputInfo){
+		if(this.uploadInput.files[0].name.split(".").slice(-1).pop().toLowerCase() === "iif")
+			return `${pack.config.backend}/v1/Import/ImportIIF?authorization=${localStorage.jwt}`;	
+		return `${pack.config.backend}/v1/Import/ImportFile?authorization=${localStorage.jwt}`;
 	}
 }

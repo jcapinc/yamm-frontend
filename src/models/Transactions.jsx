@@ -22,7 +22,6 @@ Transactions.getTransactions = function(){
 Transactions.deleteTransaction = function(id){
 	let url = `${config.config.backend}/v1/Transaction/Transaction${auth}&transaction=${id}`;
 	return axios.delete(url).then(response => {
-		console.log(response);
 		Transactions.emit('deleted',id);
 		return Transactions.fetchTransactions();
 	})

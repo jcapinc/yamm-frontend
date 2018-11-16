@@ -2,9 +2,8 @@ import React, { Component } from 'react';
 import './App.css';
 import Importer from './input/ImportTransactions.jsx';
 import Login, {checkLogin} from './input/Login.jsx';
-import Uncategorized from './output/Uncategorized.jsx';
 import Categories from './output/Categories.jsx';
-import Rules from './Rules.jsx';
+import Rules from './input/Rules.jsx';
 import Cashflow from'./output/Cashflow.jsx';
 
 class App extends Component {
@@ -18,8 +17,6 @@ class App extends Component {
           <Cashflow />
           <br /><hr />
           <Importer />
-          <br /><hr />
-          <Uncategorized />
           <br /><hr />
           <Categories />
           <br /><hr />

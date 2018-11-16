@@ -1,6 +1,8 @@
 import React from 'react';
 import axios from 'axios';
 import config from '../../package.json';
+import Rules from "./Rules.jsx"
+import TransactionModel from "../models/Transactions.jsx";
 
 export default class Categories extends React.Component{
 	constructor(){
@@ -10,6 +12,8 @@ export default class Categories extends React.Component{
 		this.fetchCategories();
 		this.tableHeaderKey = 0;
 		this.flattenRulesThreshhold = 5;
+		this.info = null;
+		TransactionModel.on("updated",() => this.forceUpdate());
 	}
 	render(){
 		if(localStorage.showCategories === "true") return this.renderTable();
@@ -26,6 +30,8 @@ export default class Categories extends React.Component{
 					<button onClick={this.autoCategorize.bind(this)}>Auto-Categorize</button>
 				</div>
 				<br />
+				<div><span>{this.uncategorized()} Uncategorized Transactions</span></div>
+				<br />
 				<div>
 					<input type="text" onChange={this.setNewCategoryName.bind(this)} />
 					<button onClick={this.createCategory.bind(this)}>Create New Category</button>
@@ -35,17 +41,20 @@ export default class Categories extends React.Component{
 					<thead>{this.getTableHeader()}</thead>
 					<tbody>{this.getTableRows(this.state.categories)}</tbody>
 				</table>
+				{this.info}
 			</div>
-		);
+		);	
+	}
+
+	uncategorized(){
+		return TransactionModel.getTransactions().filter(trx => trx.categories.length === 0).length;
 	}
 
 	getTableHeader(){
 		return (
 			<tr key={this.tableHeaderKey++}>
 				<th>Name</th>
-				<th>Parent</th>
 				<th>Rules</th>
-				<th>Create Child</th>
 				<th>Delete</th>
 			</tr>
 		);
@@ -56,18 +65,10 @@ export default class Categories extends React.Component{
 	}
 
 	getTableRow(category){
-		let parent = "";
-		if(category.parent !== null) parent = category.parent.name;
-	
 		return (
 			<tr key={category.id}>
-				<td>{category.name}</td>
-				<td>{parent}</td>
-				<td>{this.renderRules(category.category_rules)}</td>
-				<td style={{width:'1px',minWidth:'fit-content',whiteSpace:'nowrap'}}>
-					<input type="text" onChange={this.setChildName.bind(this,category)} />
-					<button onClick={this.createChild.bind(this,category)}>Create</button>
-				</td>
+				<td>{category.name}</td>	
+				<td onClick={this.showRules.bind(this,category)}>{this.renderRules(category.category_rules)}</td>
 				<td style={{width:'1px',minWidth:'fit-content',whiteSpace:'nowrap'}}>
 					<button onClick={this.deleteCategory.bind(this,category)}>Delete</button>
 				</td>
@@ -77,19 +78,11 @@ export default class Categories extends React.Component{
 
 	deleteCategory(category){
 		let url = `${config.config.backend}/v1/Categorization/Category${this.auth}&id=${category.id}`;
-		axios.delete(url).then(this.fetchCategories.bind(this));
+		return axios.delete(url).then(this.fetchCategories.bind(this));
 	}
 
 	setChildName(category,event){
 		this.setState({children:{...this.state.children,[category.id]: event.target.value}});
-	}
-
-	createChild(category){
-		let url = `${config.config.backend}/v1/Categorization/CreateCategory${this.auth}`;
-		return axios.post(url,{
-			name: this.state.children[category.id],
-			parent: category.id
-		}).then(this.fetchCategories.bind(this));
 	}
 
 	setNewCategoryName(event){
@@ -138,6 +131,11 @@ export default class Categories extends React.Component{
 
 	autoCategorize(){
 		let url = `${config.config.backend}/v1/Categorization/Categorize${this.auth}`;
-		return axios.put(url);
+		return axios.put(url).then(() => TransactionModel.fetchTransactions()).catch(console.error);
+	}
+
+	showRules(category){
+		this.info = (<Rules category={category} />);
+		this.forceUpdate();
 	}
 }
