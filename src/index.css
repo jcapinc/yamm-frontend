@@ -3,3 +3,17 @@ body {
   padding: 0;
   font-family: sans-serif;
 }
+
+table{
+  border: 1px solid #ccc;
+  padding: 20px; 
+  border-radius: 30px;
+  box-shadow:  0px 0px 28px -8px #CCC;
+}
+table tr th {
+  border-bottom: 2px solid #999;
+}
+table tr td{
+  border-bottom: 1px solid #ccc;
+  padding: 5px 10px;
+}

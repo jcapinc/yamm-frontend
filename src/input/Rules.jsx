@@ -69,7 +69,7 @@ export default class Rules extends React.Component{
 					Credit Totals: {this.getTransactionCredits()} &nbsp; | &nbsp;
 				</span>
 				<button onClick={this.clearTransactionList.bind(this)}>Hide Results</button>
-				<table width="100%" border="1">
+				<table width="100%">
 					<thead>{this.renderTransactionHeader()}</thead>
 					<tbody>{Object.values(this.state.transactions).map(record => this.renderTransactionRow(record))}</tbody>
 				</table>

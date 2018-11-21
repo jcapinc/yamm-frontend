@@ -43,7 +43,7 @@ export default class Uncategorized extends React.Component{
 				<h1>Uncategorized Transactions</h1>
 				<button onClick={this.hide.bind(this)}>Hide</button>
 				<button onClick={this.getData.bind(this)}>Reload</button>
-				<table border="1" width="100%">
+				<table width="100%">
 					<thead>{this.getHeader()}</thead>
 					<tbody>{rows}</tbody>
 				</table>

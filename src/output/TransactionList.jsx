@@ -6,7 +6,7 @@ export default class TransactionList extends React.Component{
 	render(){
 		return (
 			<center className="transactions">
-				<table border="1">
+				<table>
 					<thead>
 						<tr key={this.headerCount++}>
 							<th>Date</th>

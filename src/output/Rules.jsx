@@ -6,7 +6,7 @@ export default class Rules extends React.Component{
 			<div>
 				<h2>Rules for Category "{this.props.category.name}"</h2>
 				
-				<table border="1" style={{margin:"auto"}}>
+				<table style={{margin:"auto"}}>
 					<thead>
 						<tr>
 							<th>Regular Expression</th>

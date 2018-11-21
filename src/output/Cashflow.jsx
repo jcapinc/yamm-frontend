@@ -11,7 +11,7 @@ const getWeekNumber = function(){
 };
 
 const getTotalAndAverageHeaders = function(){
-	return [(<th>Average</th>),(<th>Total</th>)];
+	return [(<th>Avg</th>),(<th>Total</th>)];
 }
 
 export default class Cashflow extends React.Component{
@@ -97,7 +97,7 @@ class SpendingPerPeriod extends React.Component{
 					Spending Per {this.periodName}&nbsp;
 					<button onClick={this.incrementPeriodOffset(-1)}>&gt;</button>
 				</h3>
-				<table border="1" style={{fontFamily:'Ubuntu Mono,monospace,mono'}}>
+				<table style={{fontFamily:'Ubuntu Mono,monospace,mono'}}>
 					<thead><tr><th></th>{this.getHeader()}</tr></thead>
 					<tbody>
 						<tr>
@@ -244,7 +244,7 @@ class SpendingPerDay extends SpendingPerPeriod{
 			day.setDate(day.getDate() - ct - this.state.periodOffset);
 			return (
 				<th key={ct}>
-					{day.toLocaleString('en',{weekday: 'long'})}<br />
+					{day.toLocaleString('en',{weekday: 'short'})}<br />
 					<small>{day.getMonth() + 1}/{day.getDate()}</small>
 				</th>
 			);
@@ -293,7 +293,7 @@ class SpendingPerMonth extends SpendingPerPeriod{
 		return [...[...Array(7).keys()].reverse().map(ct => {
 			const day = new Date();
 			day.setMonth(day.getMonth() - ct - this.state.periodOffset);
-			return (<th key={ct}>{day.toLocaleString('en',{month: 'long'})}</th>);
+			return (<th key={ct}>{day.toLocaleString('en',{month: 'short'})}</th>);
 		}),...getTotalAndAverageHeaders()];
 	}
 

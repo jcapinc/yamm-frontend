@@ -37,7 +37,7 @@ export default class Categories extends React.Component{
 					<button onClick={this.createCategory.bind(this)}>Create New Category</button>
 				</div>
 				<br />
-				<table border="1" width="100%">
+				<table width="100%">
 					<thead>{this.getTableHeader()}</thead>
 					<tbody>{this.getTableRows(this.state.categories)}</tbody>
 				</table>
